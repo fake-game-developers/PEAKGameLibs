@@ -1,16 +1,18 @@
 <?xml version="1.0" encoding="utf-8"?>
-<package >
+<package>
   <metadata>
     <requireLicenseAcceptance>false</requireLicenseAcceptance>
 
-    <!-- Version of your nuget package. Should reflect the game version where the libs come from. -->
-    <version>1.0.1</version>
+    <!-- Match PEAK version.txt (2.5.a → 2.5.0). Bump when regenerating from a new game build. -->
+    <version>2.5.0</version>
 
-    <!-- The GitHub workflow will automatically populate these. -->
-    <id>$name$</id>
-    <title>$name$</title>
-    <authors>$author$</authors>
-    <description>$description$</description>
-    <repository type="git" url="$git$" />
+    <!-- Own package id: nuget.org PEAKGameLibs is owned by Locochoco and cannot be updated from this fork. -->
+    <id>FakeGameDevelopers.PEAKGameLibs</id>
+    <title>FakeGameDevelopers.PEAKGameLibs</title>
+    <authors>FakeGameDevelopers</authors>
+    <description>Stripped and publicized PEAK Managed assemblies for mod CI (PEAK 2.5.a). Fork of loco-choco/PEAKGameLibs.</description>
+    <projectUrl>https://github.com/fake-game-developers/PEAKGameLibs</projectUrl>
+    <repository type="git" url="https://github.com/fake-game-developers/PEAKGameLibs.git" />
+    <tags>PEAK BepInEx GameLibs</tags>
   </metadata>
 </package>

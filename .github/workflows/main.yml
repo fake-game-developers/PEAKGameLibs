@@ -5,14 +5,48 @@ on:
     branches: [main]
   workflow_dispatch:
 
+permissions:
+  contents: read
+  packages: write
+
 jobs:
   build:
     runs-on: windows-latest
     steps:
-      - uses: actions/checkout@v2
-      - uses: NuGet/setup-nuget@v1.0.5
+      - uses: actions/checkout@v4
+
+      - name: Setup NuGet
+        uses: NuGet/setup-nuget@v2
+
       - name: Pack nuget
-        run: nuget pack package -OutputFileNamesWithoutVersion -OutputDirectory build -Properties "git=https://github.com/${{ github.repository }}.git;name=${{ github.event.repository.name }};author=${{ github.repository_owner }};description=${{ github.event.repository.description }}"
-      - name: Publish nuget
         run: |
-          nuget push "build/${{ github.event.repository.name }}.nupkg" -ApiKey ${{ secrets.NUGET_KEY }} -Source https://api.nuget.org/v3/index.json
+          nuget pack package -OutputDirectory build -OutputFileNamesWithoutVersion
+          Get-ChildItem build
+
+      - name: Upload nupkg artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: FakeGameDevelopers.PEAKGameLibs
+          path: build/*.nupkg
+          if-no-files-found: error
+
+      - name: Publish to GitHub Packages
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          $nupkg = Get-ChildItem build/*.nupkg | Select-Object -First 1
+          if (-not $nupkg) { throw "No nupkg in build/" }
+          nuget sources Remove -Name github -ErrorAction SilentlyContinue
+          nuget sources Add -Name github -Source "https://nuget.pkg.github.com/fake-game-developers/index.json" -Username "${{ github.actor }}" -Password "$env:GITHUB_TOKEN" -StorePasswordInClearText
+          nuget push $nupkg.FullName -Source "https://nuget.pkg.github.com/fake-game-developers/index.json" -ApiKey "$env:GITHUB_TOKEN" -SkipDuplicate
+
+      - name: Publish to nuget.org
+        env:
+          NUGET_KEY: ${{ secrets.NUGET_KEY }}
+        run: |
+          if ([string]::IsNullOrWhiteSpace($env:NUGET_KEY)) {
+            Write-Host "NUGET_KEY secret not set; skipping nuget.org publish."
+            exit 0
+          }
+          $nupkg = Get-ChildItem build/*.nupkg | Select-Object -First 1
+          nuget push $nupkg.FullName -ApiKey $env:NUGET_KEY -Source https://api.nuget.org/v3/index.json -SkipDuplicate
