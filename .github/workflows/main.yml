@@ -36,7 +36,8 @@ jobs:
         run: |
           $nupkg = Get-ChildItem build/*.nupkg | Select-Object -First 1
           if (-not $nupkg) { throw "No nupkg in build/" }
-          nuget sources Remove -Name github -ErrorAction SilentlyContinue
+          nuget sources Remove -Name github 2>$null
+          if ($LASTEXITCODE -ne 0) { $global:LASTEXITCODE = 0 }
           nuget sources Add -Name github -Source "https://nuget.pkg.github.com/fake-game-developers/index.json" -Username "${{ github.actor }}" -Password "$env:GITHUB_TOKEN" -StorePasswordInClearText
           nuget push $nupkg.FullName -Source "https://nuget.pkg.github.com/fake-game-developers/index.json" -ApiKey "$env:GITHUB_TOKEN" -SkipDuplicate
 
