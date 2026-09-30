@@ -9,10 +9,27 @@ jobs:
   build:
     runs-on: windows-latest
     steps:
-      - uses: actions/checkout@v2
-      - uses: NuGet/setup-nuget@v1.0.5
+      - uses: actions/checkout@v4
+
+      - name: Setup NuGet
+        uses: NuGet/setup-nuget@v2
+
       - name: Pack nuget
         run: nuget pack package -OutputFileNamesWithoutVersion -OutputDirectory build -Properties "git=https://github.com/${{ github.repository }}.git;name=${{ github.event.repository.name }};author=${{ github.repository_owner }};description=${{ github.event.repository.description }}"
+
+      - name: Upload nupkg artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: PEAKGameLibs
+          path: build/*.nupkg
+          if-no-files-found: error
+
       - name: Publish nuget
+        env:
+          NUGET_KEY: ${{ secrets.NUGET_KEY }}
         run: |
-          nuget push "build/${{ github.event.repository.name }}.nupkg" -ApiKey ${{ secrets.NUGET_KEY }} -Source https://api.nuget.org/v3/index.json
+          if ([string]::IsNullOrWhiteSpace($env:NUGET_KEY)) {
+            Write-Host "NUGET_KEY secret not set; skipping nuget.org publish."
+            exit 0
+          }
+          nuget push "build/${{ github.event.repository.name }}.nupkg" -ApiKey $env:NUGET_KEY -Source https://api.nuget.org/v3/index.json -SkipDuplicate
